@@ -28,10 +28,6 @@ public class MainActivity extends AppCompatActivity {
         put(PlayerCode.O, "Player O Won!");
         put(PlayerCode.EMPTY, "It's a tie");
     }};
-    Map<PlayerCode, PlayerCode> opponentPlayers = new HashMap() {{
-        put(PlayerCode.X, PlayerCode.O);
-        put(PlayerCode.O, PlayerCode.X);
-    }};
     PlayerCode[] currentGameState = new PlayerCode[9];
     int numFilledCells = 0;
     boolean isGameActive;
@@ -81,7 +77,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void switchPlayers() {
-        this.activePlayer = opponentPlayers.get(this.activePlayer);
+        if (this.activePlayer.equals(PlayerCode.X)) {
+            this.activePlayer = PlayerCode.O;
+        } else {
+            this.activePlayer = PlayerCode.X;
+        }
         this.status.setText(String.format("It's %s turn", this.activePlayer.toString()));
     }
 
