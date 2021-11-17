@@ -8,6 +8,8 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -21,18 +23,26 @@ public class MainActivity extends AppCompatActivity {
             {0,4,8},
             {2,4,6}
     };
+    Map<PlayerCode, String> winningStatus = new HashMap() {{
+        put(PlayerCode.X, "Player X Won!");
+        put(PlayerCode.O, "Player O Won!");
+        put(PlayerCode.EMPTY, "It's a tie");
+    }};
+    Map<PlayerCode, PlayerCode> opponentPlayers = new HashMap() {{
+        put(PlayerCode.X, PlayerCode.O);
+        put(PlayerCode.O, PlayerCode.X);
+    }};
+    PlayerCode[] currentGameState = new PlayerCode[9];
+    int numFilledCells = 0;
     boolean isGameActive;
     PlayerCode activePlayer;
-    PlayerCode[] currentGameState = new PlayerCode[9];
     TextView status;
-    boolean endgame = false;
-    int numFilledCells = 0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        View view = new View(this);
         status = findViewById(R.id.main_activity_status);
         startGame();
     }
@@ -45,44 +55,45 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onBoardClick(View view) {
-        if (!this.endgame){
-            ImageView image = (ImageView) view;
-            int cellPosition = Integer.parseInt(image.getTag().toString());
-            if (this.currentGameState[cellPosition].equals(PlayerCode.EMPTY)) {
-                this.currentGameState[cellPosition] = this.activePlayer;
-                image.setImageResource(this.activePlayer.getDrawable());
-                if (isWinner()) {
-                    this.status.setText(String.format("Player %s Won!", this.activePlayer.toString()));
-                    this.endgame = true;
-                } else if (numFilledCells >= this.currentGameState.length - 1) {
-                    this.status.setText("It's a tie");
-                    this.endgame = true;
-                } else {
-                    switchPlayers();
-                    this.status.setText(String.format("It's %s turn", this.activePlayer.toString()));
-                    numFilledCells++;
-                }
-            }
+        // getting pos for turn
+        ImageView image = (ImageView) view;
+        int cellPosition = Integer.parseInt(image.getTag().toString());
+        // if legal, doing turn
+        if (this.isGameActive && this.currentGameState[cellPosition].equals(PlayerCode.EMPTY)) {
+            playTurn(image, cellPosition);
+            switchPlayers();
+            checkEndGame();
+        }
+    }
+
+    private void playTurn(ImageView image, int cellPosition) {
+        this.currentGameState[cellPosition] = this.activePlayer;
+        image.setImageResource(this.activePlayer.getDrawable());
+        this.numFilledCells++;
+    }
+
+    private void checkEndGame() {
+        PlayerCode winner = checkForWinner();
+        if (this.numFilledCells >= this.currentGameState.length || winner != PlayerCode.EMPTY) {
+            this.isGameActive = false;
+            this.status.setText(winningStatus.get(winner));
         }
     }
 
     private void switchPlayers() {
-        if (this.activePlayer.equals(PlayerCode.X)) {
-            this.activePlayer = PlayerCode.O;
-        } else {
-            this.activePlayer = PlayerCode.X;
-        }
+        this.activePlayer = opponentPlayers.get(this.activePlayer);
+        this.status.setText(String.format("It's %s turn", this.activePlayer.toString()));
     }
 
-    private boolean isWinner() {
+    private PlayerCode checkForWinner() {
         for (int[] winPos: this.possibleWinningPositions) {
             if (this.currentGameState[winPos[0]] == this.currentGameState[winPos[1]] &&
-                    this.currentGameState[winPos[2]] == this.currentGameState[winPos[1]] &&
+                    this.currentGameState[winPos[1]] == this.currentGameState[winPos[2]] &&
                     this.currentGameState[winPos[0]] != PlayerCode.EMPTY) {
-                return true;
+                return this.currentGameState[winPos[0]];
             }
         }
-        return false;
+        return PlayerCode.EMPTY;
     }
 
 }
